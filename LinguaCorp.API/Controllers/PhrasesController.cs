@@ -10,12 +10,14 @@ namespace LinguaCorp.API.Controllers
     {
         private readonly IPhraseService _phraseService;
         private readonly ILogger<PhrasesController> _logger;
+        private readonly IConfiguration _configuration;
 
         // The service is automatically injected via dependency injection
-        public PhrasesController(ILogger<PhrasesController> logger, IPhraseService phraseService)
+        public PhrasesController(ILogger<PhrasesController> logger, IPhraseService phraseService, IConfiguration configuration)
         {
             _logger = logger;
             _phraseService = phraseService;
+            _configuration = configuration;
         }
 
         /// <summary>
@@ -25,13 +27,21 @@ namespace LinguaCorp.API.Controllers
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public IActionResult GetAllPhrases()
+        public IActionResult GetAllPhrases([FromHeader(Name = "X-API-KEY")] string apiKey)
         {
             _logger.LogInformation("Request received to get all phrases");
 
             try
             {
+                var configuredKey = _configuration["ApiSettings:ApiKey"];
+                if (apiKey != configuredKey)
+                {
+                    _logger.LogWarning("Invalid API key provided");
+                    return Unauthorized("Invalid API key.");
+                }
+
                 var phrases = _phraseService.GetAllPhrases();
 
                 if (phrases.Count == 0)
@@ -54,13 +64,15 @@ namespace LinguaCorp.API.Controllers
         /// Retrieves a specific phrase by its unique identifier.
         /// </summary>
         /// <param name="id">Phrase ID</param>
+        /// <param name="apiKey">API Key for authentication</param>
         /// <returns>Returns the phrase if found.</returns>
         [HttpGet("{id}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public IActionResult GetPhraseById(int id)
+        public IActionResult GetPhraseById(int id, [FromHeader(Name = "X-API-KEY")] string apiKey)
         {
             _logger.LogInformation("Request received to get phrase with ID {Id}", id);
 
@@ -72,6 +84,13 @@ namespace LinguaCorp.API.Controllers
 
             try
             {
+                var configuredKey = _configuration["ApiSettings:ApiKey"];
+                if (apiKey != configuredKey)
+                {
+                    _logger.LogWarning("Invalid API key provided for phrase ID {Id}", id);
+                    return Unauthorized("Invalid API key.");
+                }
+
                 var phrase = _phraseService.GetPhraseById(id);
 
                 _logger.LogInformation("Phrase with ID {Id} retrieved successfully", id);
@@ -93,23 +112,32 @@ namespace LinguaCorp.API.Controllers
         /// Creates a new phrase.
         /// </summary>
         /// <param name="phrase">Phrase object to create</param>
+        /// <param name="apiKey">API Key for authentication</param>
         /// <returns>Returns the created phrase with assigned ID.</returns>
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public IActionResult Create([FromBody] Phrase phrase)
+        public IActionResult Create([FromBody] Phrase phrase, [FromHeader(Name = "X-API-KEY")] string apiKey)
         {
             _logger.LogInformation("Request received to create a new phrase");
 
-            if (!ModelState.IsValid)
-            {
-                _logger.LogWarning("Invalid model state for creating phrase");
-                return BadRequest(ModelState);
-            }
-
             try
             {
+                var configuredKey = _configuration["ApiSettings:ApiKey"];
+                if (apiKey != configuredKey)
+                {
+                    _logger.LogWarning("Invalid API key provided for creating phrase");
+                    return Unauthorized("Invalid API key.");
+                }
+
+                if (!ModelState.IsValid)
+                {
+                    _logger.LogWarning("Invalid model state for creating phrase");
+                    return BadRequest(ModelState);
+                }
+
                 var created = _phraseService.CreatePhrase(phrase);
 
                 _logger.LogInformation("Phrase created successfully with ID {Id}", created.Id);
@@ -127,24 +155,33 @@ namespace LinguaCorp.API.Controllers
         /// </summary>
         /// <param name="id">ID of the phrase to update</param>
         /// <param name="updatedPhrase">Updated phrase data</param>
+        /// <param name="apiKey">API Key for authentication</param>
         /// <returns>Returns the updated phrase.</returns>
         [HttpPut("{id}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public IActionResult UpdatePhrase(int id, [FromBody] Phrase updatedPhrase)
+        public IActionResult UpdatePhrase(int id, [FromBody] Phrase updatedPhrase, [FromHeader(Name = "X-API-KEY")] string apiKey)
         {
             _logger.LogInformation("Request received to update phrase with ID {Id}", id);
 
-            if (!ModelState.IsValid)
-            {
-                _logger.LogWarning("Invalid model state for updating phrase with ID {Id}", id);
-                return BadRequest(ModelState);
-            }
-
             try
             {
+                var configuredKey = _configuration["ApiSettings:ApiKey"];
+                if (apiKey != configuredKey)
+                {
+                    _logger.LogWarning("Invalid API key provided for updating phrase ID {Id}", id);
+                    return Unauthorized("Invalid API key.");
+                }
+
+                if (!ModelState.IsValid)
+                {
+                    _logger.LogWarning("Invalid model state for updating phrase with ID {Id}", id);
+                    return BadRequest(ModelState);
+                }
+
                 var success = _phraseService.UpdatePhrase(id, updatedPhrase);
 
                 if (!success)
@@ -167,13 +204,15 @@ namespace LinguaCorp.API.Controllers
         /// Deletes a phrase by ID.
         /// </summary>
         /// <param name="id">ID of the phrase to delete</param>
+        /// <param name="apiKey">API Key for authentication</param>
         /// <returns>No content on success.</returns>
         [HttpDelete("{id}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public IActionResult DeletePhrase(int id)
+        public IActionResult DeletePhrase(int id, [FromHeader(Name = "X-API-KEY")] string apiKey)
         {
             _logger.LogInformation("Request received to delete phrase with ID {Id}", id);
 
@@ -185,6 +224,13 @@ namespace LinguaCorp.API.Controllers
 
             try
             {
+                var configuredKey = _configuration["ApiSettings:ApiKey"];
+                if (apiKey != configuredKey)
+                {
+                    _logger.LogWarning("Invalid API key provided for deleting phrase ID {Id}", id);
+                    return Unauthorized("Invalid API key.");
+                }
+
                 var success = _phraseService.DeletePhrase(id);
 
                 if (!success)
