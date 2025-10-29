@@ -1,4 +1,5 @@
 ﻿using LinguaCorp.API.Models;
+using LinguaCorp.API.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LinguaCorp.API.Controllers
@@ -7,27 +8,93 @@ namespace LinguaCorp.API.Controllers
     [Route("api/[controller]")]
     public class PhrasesController : ControllerBase
     {
-        // In-memory list of phrases
-        private static List<Phrase> Phrases = new List<Phrase>
-        {
-            new Phrase { Id = 1, OriginalText = "Hello", Language = "en", TranslatedText = "Olá" },
-            new Phrase { Id = 2, OriginalText = "Thank you", Language = "en", TranslatedText = "Obrigado" },
-            new Phrase { Id = 3, OriginalText = "Good morning", Language = "en", TranslatedText = "Bom dia" }
-        };
+        private readonly IPhraseService _phraseService;
 
-        // GET: api/phrases
+        // The service is automatically injected via dependency injection
+        public PhrasesController(IPhraseService phraseService)
+        {
+            _phraseService = phraseService;
+        }
+
         [HttpGet]
         public IActionResult GetAllPhrases()
         {
-            return Ok(Phrases);
+            var phrases = _phraseService.GetAllPhrases();
+
+            if (phrases.Count == 0)
+            {
+                return NoContent();
+            }
+
+            return Ok(phrases);
         }
 
-        // GET: api/phrases/{id}
         [HttpGet("{id}")]
         public IActionResult GetPhraseById(int id)
         {
-            var phrase = Phrases.FirstOrDefault(p => p.Id == id);
+            if (id <= 0)
+            {
+                return BadRequest("ID must be a positive integer.");
+            }
+
+            var phrase = _phraseService.GetPhraseById(id);
+
+            if (phrase == null)
+            {
+                return NotFound($"Phrase with ID {id} not found.");
+            }
+
             return Ok(phrase);
+        }
+
+        [HttpPost]
+        public IActionResult Create([FromBody] Phrase phrase)
+        {
+            // This verifies if the Model is filled correctly. If not, the error message is returned
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var created = _phraseService.CreatePhrase(phrase);
+
+            return CreatedAtAction(nameof(GetPhraseById), new { id = created.Id }, created);
+        }
+
+        [HttpPut("{id}")]
+        public IActionResult UpdatePhrase(int id, [FromBody] Phrase updatedPhrase)
+        {
+            // This verifies if the Model is filled correctly. If not, the error message is returned
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var success = _phraseService.UpdatePhrase(id, updatedPhrase);
+            if (!success)
+            {
+                return NotFound($"Phrase with ID {id} not found.");
+            }
+
+            return Ok(updatedPhrase);
+        }
+
+        [HttpDelete("{id}")]
+        public IActionResult DeletePhrase(int id)
+        {
+            if (id <= 0)
+            {
+                return BadRequest("ID must be a positive integer.");
+            }
+
+            var success = _phraseService.DeletePhrase(id);
+
+            if (!success)
+            {
+                return NotFound($"Phrase with ID {id} not found.");
+            }
+
+            return NoContent();
         }
     }
 }
