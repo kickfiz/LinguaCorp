@@ -37,5 +37,37 @@ namespace LinguaCorp.API.Services
 
             return phrase;
         }
+
+        // Replaces an existing phrase
+        public bool UpdatePhrase(int id, Phrase updated)
+        {
+            var existingPhrase = GetPhraseById(id);
+
+            // If phrase not found, return false
+            if (existingPhrase == null)
+            {
+                return false;
+            }
+
+            // Update fields of the existing phrase
+            existingPhrase.OriginalText = updated.OriginalText;
+            existingPhrase.Language = updated.Language;
+            existingPhrase.TranslatedText = updated.TranslatedText;
+
+            return true;
+        }
+
+        // Removes a Phrase
+        public bool DeletePhrase(int id)
+        {
+            var phrase = GetPhraseById(id);
+            if (phrase == null)
+            {
+                return false;
+            }
+
+            _phrases.Remove(phrase);
+            return true;
+        }
     }
 }

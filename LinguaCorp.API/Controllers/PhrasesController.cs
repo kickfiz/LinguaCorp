@@ -60,5 +60,41 @@ namespace LinguaCorp.API.Controllers
 
             return CreatedAtAction(nameof(GetPhraseById), new { id = created.Id }, created);
         }
+
+        [HttpPut("{id}")]
+        public IActionResult UpdatePhrase(int id, [FromBody] Phrase updatedPhrase)
+        {
+            // This verifies if the Model is filled correctly. If not, the error message is returned
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var success = _phraseService.UpdatePhrase(id, updatedPhrase);
+            if (!success)
+            {
+                return NotFound($"Phrase with ID {id} not found.");
+            }
+
+            return Ok(updatedPhrase);
+        }
+
+        [HttpDelete("{id}")]
+        public IActionResult DeletePhrase(int id)
+        {
+            if (id <= 0)
+            {
+                return BadRequest("ID must be a positive integer.");
+            }
+
+            var success = _phraseService.DeletePhrase(id);
+
+            if (!success)
+            {
+                return NotFound($"Phrase with ID {id} not found.");
+            }
+
+            return NoContent();
+        }
     }
 }
