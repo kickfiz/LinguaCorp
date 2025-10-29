@@ -25,20 +25,29 @@ namespace LinguaCorp.API.Controllers
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public IActionResult GetAllPhrases()
         {
             _logger.LogInformation("Request received to get all phrases");
 
-            var phrases = _phraseService.GetAllPhrases();
-
-            if (phrases.Count == 0)
+            try
             {
-                _logger.LogInformation("No phrases found in the system");
-                return NoContent();
-            }
+                var phrases = _phraseService.GetAllPhrases();
 
-            _logger.LogInformation("Retrieved {Count} phrases successfully", phrases.Count);
-            return Ok(phrases);
+                if (phrases.Count == 0)
+                {
+                    _logger.LogInformation("No phrases found in the system");
+                    return NoContent();
+                }
+
+                _logger.LogInformation("Retrieved {Count} phrases successfully", phrases.Count);
+                return Ok(phrases);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving all phrases.");
+                return StatusCode(500, "An error occurred while retrieving phrases.");
+            }
         }
 
         /// <summary>
@@ -50,6 +59,7 @@ namespace LinguaCorp.API.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public IActionResult GetPhraseById(int id)
         {
             _logger.LogInformation("Request received to get phrase with ID {Id}", id);
@@ -60,16 +70,23 @@ namespace LinguaCorp.API.Controllers
                 return BadRequest("ID must be a positive integer.");
             }
 
-            var phrase = _phraseService.GetPhraseById(id);
-
-            if (phrase == null)
+            try
             {
-                _logger.LogWarning("Phrase with ID {Id} not found", id);
-                return NotFound($"Phrase with ID {id} not found.");
-            }
+                var phrase = _phraseService.GetPhraseById(id);
 
-            _logger.LogInformation("Phrase with ID {Id} retrieved successfully", id);
-            return Ok(phrase);
+                _logger.LogInformation("Phrase with ID {Id} retrieved successfully", id);
+                return Ok(phrase);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _logger.LogWarning(ex.Message);
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving phrase with ID {Id}", id);
+                return StatusCode(500, "An error occurred while retrieving the phrase.");
+            }
         }
 
         /// <summary>
@@ -80,6 +97,7 @@ namespace LinguaCorp.API.Controllers
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public IActionResult Create([FromBody] Phrase phrase)
         {
             _logger.LogInformation("Request received to create a new phrase");
@@ -90,10 +108,18 @@ namespace LinguaCorp.API.Controllers
                 return BadRequest(ModelState);
             }
 
-            var created = _phraseService.CreatePhrase(phrase);
+            try
+            {
+                var created = _phraseService.CreatePhrase(phrase);
 
-            _logger.LogInformation("Phrase created successfully with ID {Id}", created.Id);
-            return CreatedAtAction(nameof(GetPhraseById), new { id = created.Id }, created);
+                _logger.LogInformation("Phrase created successfully with ID {Id}", created.Id);
+                return CreatedAtAction(nameof(GetPhraseById), new { id = created.Id }, created);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating phrase");
+                return StatusCode(500, "An error occurred while creating the phrase.");
+            }
         }
 
         /// <summary>
@@ -106,6 +132,7 @@ namespace LinguaCorp.API.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public IActionResult UpdatePhrase(int id, [FromBody] Phrase updatedPhrase)
         {
             _logger.LogInformation("Request received to update phrase with ID {Id}", id);
@@ -116,15 +143,24 @@ namespace LinguaCorp.API.Controllers
                 return BadRequest(ModelState);
             }
 
-            var success = _phraseService.UpdatePhrase(id, updatedPhrase);
-            if (!success)
+            try
             {
-                _logger.LogWarning("Phrase with ID {Id} not found for update", id);
-                return NotFound($"Phrase with ID {id} not found.");
-            }
+                var success = _phraseService.UpdatePhrase(id, updatedPhrase);
 
-            _logger.LogInformation("Phrase with ID {Id} updated successfully", id);
-            return Ok(updatedPhrase);
+                if (!success)
+                {
+                    _logger.LogWarning("Phrase with ID {Id} not found for update", id);
+                    return NotFound($"Phrase with ID {id} not found.");
+                }
+
+                _logger.LogInformation("Phrase with ID {Id} updated successfully", id);
+                return Ok(updatedPhrase);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating phrase with ID {Id}", id);
+                return StatusCode(500, "An error occurred while updating the phrase.");
+            }
         }
 
         /// <summary>
@@ -136,6 +172,7 @@ namespace LinguaCorp.API.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public IActionResult DeletePhrase(int id)
         {
             _logger.LogInformation("Request received to delete phrase with ID {Id}", id);
@@ -146,16 +183,24 @@ namespace LinguaCorp.API.Controllers
                 return BadRequest("ID must be a positive integer.");
             }
 
-            var success = _phraseService.DeletePhrase(id);
-
-            if (!success)
+            try
             {
-                _logger.LogWarning("Phrase with ID {Id} not found for deletion", id);
-                return NotFound($"Phrase with ID {id} not found.");
-            }
+                var success = _phraseService.DeletePhrase(id);
 
-            _logger.LogInformation("Phrase with ID {Id} deleted successfully", id);
-            return NoContent();
+                if (!success)
+                {
+                    _logger.LogWarning("Phrase with ID {Id} not found for deletion", id);
+                    return NotFound($"Phrase with ID {id} not found.");
+                }
+
+                _logger.LogInformation("Phrase with ID {Id} deleted successfully", id);
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting phrase with ID {Id}", id);
+                return StatusCode(500, "An error occurred while deleting the phrase.");
+            }
         }
     }
 }

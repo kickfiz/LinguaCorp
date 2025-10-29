@@ -19,12 +19,27 @@ namespace LinguaCorp.API.Services
         }
 
         // Retrieve all phrases
-        public List<Phrase> GetAllPhrases() => _phrases;
+        public List<Phrase> GetAllPhrases()
+        {
+            // Simulate a possible data access issue
+            if (_phrases == null)
+            {
+                throw new InvalidOperationException("Phrase data could not be retrieved.");
+            }
+            return _phrases;
+        }
 
         // Retrieve a phrase by ID
-        public Phrase? GetPhraseById(int id)
+        public Phrase GetPhraseById(int id)
         {
-            return _phrases.FirstOrDefault(p => p.Id == id);
+            var phrase = _phrases.FirstOrDefault(p => p.Id == id);
+
+            if (phrase == null)
+            {
+                throw new KeyNotFoundException($"Phrase with ID {id} not found.");
+            }
+
+            return phrase;
         }
 
         // Adds a new phrase
