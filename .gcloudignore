@@ -1,0 +1,79 @@
+# .gcloudignore - Exclude files from gcloud deployment
+# This file specifies intentionally untracked files that gcloud should ignore.
+# See https://cloud.google.com/sdk/gcloud/reference/topic/gcloudignore
+
+# Git files
+.git
+.gitignore
+.gitattributes
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+azure-pipelines.yml
+
+# IDE and editor files
+.vs/
+.vscode/
+.idea/
+*.suo
+*.user
+*.userprefs
+*.pidb
+*.DotSettings.user
+*.swp
+*.swo
+*~
+
+# Build outputs
+**/bin/
+**/obj/
+**/out/
+**/publish/
+
+# NuGet
+*.nupkg
+**/packages/
+.nuget/
+
+# Test results
+**/TestResults/
+**/*.trx
+**/*.coverage
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Documentation
+*.md
+!README.md
+docs/
+
+# Environment files (security)
+.env
+.env.*
+appsettings.Development.json
+appsettings.Local.json
+
+# Deployment files
+*.ps1
+*.sh
+deploy/
+scripts/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.cache
+
+# Node modules (if any frontend assets)
+node_modules/
+
+# Claude Code
+.claude/
