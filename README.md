@@ -28,11 +28,7 @@ Send a POST request to `/api/auth/login` with credentials:
 
 ### Using the Token with tools like Postman, etc...
 
-Include the token in the Authorization header for all API requests:
-
-```
-Authorization: Bearer <your_token>
-```
+Include the token in the Authorization tab/header as "Bearer token" for all API requests by pasting it inside without the need of "Bearer ..."
 
 ### Swagger UI
 
