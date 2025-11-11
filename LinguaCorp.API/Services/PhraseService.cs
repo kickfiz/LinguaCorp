@@ -1,38 +1,35 @@
-﻿using LinguaCorp.API.Models;
+﻿using LinguaCorp.API.Data;
+using LinguaCorp.API.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace LinguaCorp.API.Services
 {
     public class PhraseService : IPhraseService
     {
-        // In-memory storage for simplicity (will be replaced by database later)
-        private readonly List<Phrase> _phrases;
+        private readonly ApplicationDbContext _context;
 
-        public PhraseService()
+        public PhraseService(ApplicationDbContext context)
         {
-            // Initialize sample data
-            _phrases = new List<Phrase>
-            {
-                new Phrase { Id = 1, OriginalText = "Hello", Language = "en", TranslatedText = "Olá" },
-                new Phrase { Id = 2, OriginalText = "Thank you", Language = "en", TranslatedText = "Obrigado" },
-                new Phrase { Id = 3, OriginalText = "Good morning", Language = "en", TranslatedText = "Bom dia" }
-            };
+            _context = context;
         }
 
         // Retrieve all phrases
         public List<Phrase> GetAllPhrases()
         {
-            // Simulate a possible data access issue
-            if (_phrases == null)
+            try
+            {
+                return _context.Phrases.ToList();
+            }
+            catch (Exception)
             {
                 throw new InvalidOperationException("Phrase data could not be retrieved.");
             }
-            return _phrases;
         }
 
         // Retrieve a phrase by ID
         public Phrase GetPhraseById(int id)
         {
-            var phrase = _phrases.FirstOrDefault(p => p.Id == id);
+            var phrase = _context.Phrases.Find(id);
 
             if (phrase == null)
             {
@@ -45,10 +42,8 @@ namespace LinguaCorp.API.Services
         // Adds a new phrase
         public Phrase CreatePhrase(Phrase phrase)
         {
-            // Assign a new unique ID to the phrase
-            phrase.Id = _phrases.Any() ? _phrases.Max(p => p.Id) + 1 : 1;
-
-            _phrases.Add(phrase);
+            _context.Phrases.Add(phrase);
+            _context.SaveChanges();
 
             return phrase;
         }
@@ -56,9 +51,8 @@ namespace LinguaCorp.API.Services
         // Replaces an existing phrase
         public bool UpdatePhrase(int id, Phrase updated)
         {
-            var existingPhrase = GetPhraseById(id);
+            var existingPhrase = _context.Phrases.Find(id);
 
-            // If phrase not found, return false
             if (existingPhrase == null)
             {
                 return false;
@@ -69,19 +63,22 @@ namespace LinguaCorp.API.Services
             existingPhrase.Language = updated.Language;
             existingPhrase.TranslatedText = updated.TranslatedText;
 
+            _context.SaveChanges();
+
             return true;
         }
 
         // Removes a Phrase
         public bool DeletePhrase(int id)
         {
-            var phrase = GetPhraseById(id);
+            var phrase = _context.Phrases.Find(id);
             if (phrase == null)
             {
                 return false;
             }
 
-            _phrases.Remove(phrase);
+            _context.Phrases.Remove(phrase);
+            _context.SaveChanges();
             return true;
         }
     }
