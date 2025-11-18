@@ -117,7 +117,7 @@ obj/
 Adiciona após `var builder = WebApplication.CreateBuilder(args);`:
 
 ```csharp
-// Configure para escutar na porta do Cloud Run
+// Configurar port da cloud run
 var port = Environment.GetEnvironmentVariable("PORT");
 if (!string.IsNullOrEmpty(port))
 {
@@ -128,7 +128,7 @@ if (!string.IsNullOrEmpty(port))
 Adiciona antes de `app.Run();`:
 
 ```csharp
-// Health check endpoint para Cloud Run
+// Health check endpoint para Cloud Run (necessário)
 app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }))
     .ExcludeFromDescription();
 ```
@@ -178,14 +178,5 @@ gcloud run services logs read linguacorp-api --region europe-west1
 
 ### Testar a API
 ```cmd
-curl https://[SEU-URL]/health
+curl https://[O-TEU-URL]/health
 ```
-
-## Resumo dos Ficheiros Necessários
-
-1. ✅ `Dockerfile` - Build e runtime da aplicação
-2. ✅ `.dockerignore` - Exclui ficheiros desnecessários
-3. ✅ `.gcloudignore` - Exclui ficheiros do deployment
-4. ✅ `Program.cs` - Configurado para Cloud Run (porta dinâmica + health check)
-
-**Região escolhida:** `europe-west1` (Bélgica) - a mais próxima de Portugal
