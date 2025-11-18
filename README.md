@@ -8,7 +8,7 @@ JWT Bearer token authentication
 
 ### GCP Link
 
-https://console.cloud.google.com/billing/linkedaccount?project=linguacorp-api-prod
+https://linguacorp-api-292669045273.europe-west1.run.app/api/
 
 ### Token
 
