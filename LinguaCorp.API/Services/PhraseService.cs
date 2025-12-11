@@ -26,6 +26,19 @@ namespace LinguaCorp.API.Services
             }
         }
 
+        // Retrieve all phrases by language
+        public List<Phrase> GetPhrasesByLanguage(string language)
+        {
+            try
+            {
+                return _context.Phrases.Where(p => p.Language == language).ToList();
+            }
+            catch (Exception)
+            {
+                throw new InvalidOperationException("Phrase data could not be retrieved.");
+            }
+        }
+
         // Retrieve a phrase by ID
         public Phrase GetPhraseById(int id)
         {
@@ -39,13 +52,20 @@ namespace LinguaCorp.API.Services
             return phrase;
         }
 
-        // Adds a new phrase
+        // Adds a single phrase
         public Phrase CreatePhrase(Phrase phrase)
         {
             _context.Phrases.Add(phrase);
             _context.SaveChanges();
-
             return phrase;
+        }
+
+        // Adds one or more phrases
+        public List<Phrase> CreatePhrases(List<Phrase> phrases)
+        {
+            _context.Phrases.AddRange(phrases);
+            _context.SaveChanges();
+            return phrases;
         }
 
         // Replaces an existing phrase

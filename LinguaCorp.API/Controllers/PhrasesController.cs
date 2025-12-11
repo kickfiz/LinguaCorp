@@ -54,6 +54,40 @@ namespace LinguaCorp.API.Controllers
         }
 
         /// <summary>
+        /// Retrieves all phrases for a specific language.
+        /// </summary>
+        /// <param name="languageCode">Language code (e.g., "en", "pt", "it")</param>
+        /// <returns>List of phrases for the specified language or 204 if empty.</returns>
+        [HttpGet("language/{languageCode}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public IActionResult GetPhrasesByLanguage(string languageCode)
+        {
+            _logger.LogInformation("Request received to get phrases for language {Language}", languageCode);
+
+            try
+            {
+                var phrases = _phraseService.GetPhrasesByLanguage(languageCode);
+
+                if (phrases.Count == 0)
+                {
+                    _logger.LogInformation("No phrases found for language {Language}", languageCode);
+                    return NoContent();
+                }
+
+                _logger.LogInformation("Retrieved {Count} phrases for language {Language}", phrases.Count, languageCode);
+                return Ok(phrases);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving phrases for language {Language}", languageCode);
+                return StatusCode(500, "An error occurred while retrieving phrases.");
+            }
+        }
+
+        /// <summary>
         /// Retrieves a specific phrase by its unique identifier.
         /// </summary>
         /// <param name="id">Phrase ID</param>
@@ -124,6 +158,80 @@ namespace LinguaCorp.API.Controllers
             {
                 _logger.LogError(ex, "Error creating phrase");
                 return StatusCode(500, "An error occurred while creating the phrase.");
+            }
+        }
+
+        /// <summary>
+        /// Creates phrases in bulk. Accepts an array of phrase objects.
+        /// </summary>
+        /// <param name="phrases">Array of phrases to create (minimum 1 phrase required)</param>
+        /// <returns>Returns all created phrases with their assigned IDs.</returns>
+        /// <remarks>
+        /// Sample request for a single phrase:
+        ///
+        ///     POST /api/Phrases/bulk
+        ///     [
+        ///         {
+        ///             "originalText": "Hello",
+        ///             "language": "en",
+        ///             "translatedText": "Olá"
+        ///         }
+        ///     ]
+        ///
+        /// Sample request for multiple phrases:
+        ///
+        ///     POST /api/Phrases/bulk
+        ///     [
+        ///         {
+        ///             "originalText": "Hello",
+        ///             "language": "en",
+        ///             "translatedText": "Olá"
+        ///         },
+        ///         {
+        ///             "originalText": "Goodbye",
+        ///             "language": "en",
+        ///             "translatedText": "Adeus"
+        ///         }
+        ///     ]
+        ///
+        /// </remarks>
+        [HttpPost("bulk")]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public IActionResult CreateBulk([FromBody] List<Phrase> phrases)
+        {
+            _logger.LogInformation("Request received to create {Count} phrase(s)", phrases?.Count ?? 0);
+
+            try
+            {
+                if (phrases == null || phrases.Count == 0)
+                {
+                    _logger.LogWarning("Empty or null phrases array received");
+                    return BadRequest("At least one phrase is required.");
+                }
+
+                if (!ModelState.IsValid)
+                {
+                    _logger.LogWarning("Invalid model state for creating phrase(s)");
+                    return BadRequest(ModelState);
+                }
+
+                var createdPhrases = _phraseService.CreatePhrases(phrases);
+                _logger.LogInformation("{Count} phrase(s) created successfully", createdPhrases.Count);
+
+                if (createdPhrases.Count == 1)
+                {
+                    return CreatedAtAction(nameof(GetPhraseById), new { id = createdPhrases[0].Id }, createdPhrases[0]);
+                }
+
+                return CreatedAtAction(nameof(GetAllPhrases), createdPhrases);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating phrase(s)");
+                return StatusCode(500, "An error occurred while creating the phrase(s).");
             }
         }
 
