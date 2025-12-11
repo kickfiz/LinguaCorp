@@ -1,3 +1,4 @@
+using LinguaCorp.API.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -91,28 +92,4 @@ public class AuthController : ControllerBase
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
-}
-
-/// <summary>
-/// Login request model
-/// </summary>
-public class LoginRequest
-{
-    /// <summary>Username</summary>
-    public string Username { get; set; }
-
-    /// <summary>Password</summary>
-    public string Password { get; set; }
-}
-
-/// <summary>
-/// Login response model
-/// </summary>
-public class LoginResponse
-{
-    /// <summary>JWT access token</summary>
-    public string Token { get; set; }
-
-    /// <summary>Token expiration time in seconds</summary>
-    public int ExpiresIn { get; set; }
 }
